@@ -8,4 +8,7 @@ Ansible automations for SemaphoreUI
 2. Great! Now download my repository:
   - `git clone https://github.com/rzfeeser/ansible-semaphoreui`
 
+3. At this time, the solution requires jmsepath (python) for parsing the JSON that is returned by ebdruplab.semaphoreui
+  - `python -m pip install jmsepath`
+
 3. Fantastic! If you haven't already, watch the following video to understand how the playbooks within this repository work [https://youtube.com/codewithfeeser](https://youtube.com/codewithfeeser)
