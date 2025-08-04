@@ -1,0 +1,25 @@
+---
+- name: "Provision Semaphore UI project with key"
+  hosts: localhost
+  gather_facts: false
+
+  vars:
+    semaphore_host: http://localhost
+    semaphore_port: 2225
+
+    # It's highly recommended to store sensitive variables in Ansible Vault
+    semaphore_username: admin
+    semaphore_password: changeme
+
+  tasks:
+    - name: "Log in to Semaphore"
+      ebdruplab.semaphoreui.login:
+        host: "{{ semaphore_host }}"
+        port: "{{ semaphore_port }}"
+        username: "{{ semaphore_username }}"
+        password: "{{ semaphore_password }}"
+      register: login_result
+
+    - name: "display results"
+      ansible.builtin.debug:
+        var: login_result
