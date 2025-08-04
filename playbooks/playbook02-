@@ -1,0 +1,156 @@
+---
+- name: Provision Semaphore UI
+  hosts: localhost
+  gather_facts: false
+
+  vars:
+    # semaphoreUI connection into
+    semaphore_host: http://172.28.37.239
+    semaphore_port: 3000
+
+    # inputs
+    project_name: "CODEWITHFEESER DEMO"
+
+    # login info
+    # It's highly recommended to store sensitive variables in a keystore such as GitHub secrets vault
+    # Ansible Vault should *never* be viewed as a primary key store
+    semaphore_username: admin
+    semaphore_password: changeme
+
+  tasks:
+
+    - name: Login
+      block:
+        - name: "Log in to Semaphore"
+          ebdruplab.semaphoreui.login:
+            host: "{{ semaphore_host }}"
+            port: "{{ semaphore_port }}"
+            username: "{{ semaphore_username }}"
+            password: "{{ semaphore_password }}"
+          register: login_result
+    
+        - name: "display results"
+          ansible.builtin.debug:
+            var: login_result
+            verbosity: 1
+    
+        - name: Get projects using session cookie
+          ebdruplab.semaphoreui.project_list:
+            host: "{{ semaphore_host }}"
+            port: "{{ semaphore_port }}"
+            username: "{{ semaphore_username }}"
+            password: "{{ semaphore_password }}"
+          register: results
+    
+        - name: Display the results of the login
+          ansible.builtin.debug:
+            var: results
+            verbosity: 1
+
+
+    - name: Create project or get project info
+      block:
+        - name: Creating a project
+          ebdruplab.semaphoreui.project_create:
+            host: "{{ semaphore_host }}"
+            port: "{{ semaphore_port }}"
+            session_cookie: "{{ login_result.session_cookie }}"
+            name: "{{ project_name }}"
+            demo: true
+          register: project
+          when: project_name not in results.projects
+    
+        - name: Display whatever project is
+          ansible.builtin.debug:
+            var: project
+            verbosity: 1
+    
+        - name: Create a login/password key
+          ebdruplab.semaphoreui.project_key_create:
+            host: "{{ semaphore_host }}"
+            port: "{{ semaphore_port }}"
+            session_cookie: "{{ login_result.session_cookie }}"
+            session_cookie: "{{ login_result.session_cookie }}"
+            project_id: "{{ project.project.id }}"
+            name: "Basic Auth"
+            type: "login_password"
+            login_password:
+              login: "admin"
+              password: "supersecret"
+          register: results
+    
+        - name: debug
+          ansible.builtin.debug:
+            var: results
+            verbosity: 1
+  
+      - name: Create an environment in a project
+        ebdruplab.semaphoreui.project_environment_create:
+          host: "{{ semaphore_host }}"
+          port: "{{ semaphore_port }}"
+          session_cookie: "{{ login_result.session_cookie }}"
+          project_id: "{{ project.project.id }}"
+          environment:
+            name: "Demo Environment"
+            password: "CODEWITHFEESER"
+        register: results
+  
+      - name: display results
+        ansible.builtin.debug:
+          var: results
+          verbsosity: 1
+
+
+    - name: Create static inventory
+      ebdruplab.semaphoreui.project_inventory_create:
+        host: "{{ semaphore_host }}"
+        port: "{{ semaphore_port }}"
+        session_cookie: "{{ login_result.session_cookie }}"
+        project_id: "{{ project.project.id }}"
+        inventory:
+          name: "Local Static Inventory"
+          type: "static"
+          inventory: "{{ lookup('file', 'hosts.ini') }}"
+
+    - name: Create a project repository
+      ebdruplab.semaphoreui.project_repository_create:
+        host: "{{ semaphore_host }}"
+        port: "{{ semaphore_port }}"
+        session_cookie: "{{ login_result.session_cookie }}"
+        project_id: "{{ project.project.id }}"
+        repository:
+          ssh_key_id: 1
+          name: "simpleansible-linkage"
+          git_url: "git+github.com/rzfeeser/simpleansible"
+          git_branch: "main"
+      register: result
+
+    - name: show repository id
+      ansible.builtin.debug:
+        var: result
+        verbosity: 1
+
+    - name: Create a new Semaphore template
+      ebdruplab.semaphoreui.project_template_create:
+        host: "{{ semaphore_host }}"
+        port: "{{ semaphore_port }}"
+        session_cookie: "{{ login_result.session_cookie }}"
+        project_id: "{{ project.project.id }}"        
+        template:
+          name: "Deploy Web"
+          app: "ansible"
+          playbook: "simpleansible/playbook.yml"
+          inventory_id: 1
+          repository_id: 1
+          environment_id: 1
+          type: "job"
+          view_id: 1
+          description: "A sample deployment"
+          vaults: []
+          arguments: "[]"
+
+    - name: Log out of Semaphore
+      ebdruplab.semaphoreui.logout:
+        host: "{{ semaphore_host }}"
+        port: "{{ semaphore_port }}"
+        session_cookie: "{{ login_result.session_cookie }}"
