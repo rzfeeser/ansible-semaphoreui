@@ -1,2 +1,2 @@
-# required for playbooks/playbook02-*.yml
+# required for playbooks/playbook02-provision.yml
 jmespath
