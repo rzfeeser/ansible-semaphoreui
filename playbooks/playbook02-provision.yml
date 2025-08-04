@@ -38,8 +38,7 @@
           ebdruplab.semaphoreui.project_list:
             host: "{{ semaphore_host }}"
             port: "{{ semaphore_port }}"
-            username: "{{ semaphore_username }}"
-            password: "{{ semaphore_password }}"
+            session_cookie: "{{ login_result.session_cookie }}" 
           register: results
     
         - name: Display the results of the login
@@ -58,8 +57,27 @@
             name: "{{ project_name }}"
             demo: true
           register: project
-          when: project_name not in results.projects
-    
+          when: project_name not in results | community.general.json_query('projects[*].name')
+   
+        - name: Squash json if we just created project
+          ansible.builtin.set_fact:
+            project: "{{ project.project.id }}"
+          when: project_name not in results | community.general.json_query('projects[*].name')
+
+        - name: Get projectID if project already exists
+          ansible.builtin.set_fact:
+            project: "{{ results | community.general.json_query('projects[*]') }}"
+          when: project_name in results | community.general.json_query('projects[*].name')
+
+        - name: Prompt for user confirmation
+          ansible.builtin.pause:
+            prompt: "Multiple projects matching the project_name were found. Ansible will overwrite the match with the lowest ID. Press ENTER to continue."
+
+        - name: Select the first project if multiple projects exist
+          ansible.builtin.set_fact:
+            project: "{{ project[0].id }}"
+          when: project_name in results | community.general.json_query('projects[*].name')
+
         - name: Display whatever project is
           ansible.builtin.debug:
             var: project
@@ -71,7 +89,7 @@
             port: "{{ semaphore_port }}"
             session_cookie: "{{ login_result.session_cookie }}"
             session_cookie: "{{ login_result.session_cookie }}"
-            project_id: "{{ project.project.id }}"
+            project_id: "{{ project }}"
             name: "Basic Auth"
             type: "login_password"
             login_password:
@@ -84,21 +102,21 @@
             var: results
             verbosity: 1
   
-      - name: Create an environment in a project
-        ebdruplab.semaphoreui.project_environment_create:
-          host: "{{ semaphore_host }}"
-          port: "{{ semaphore_port }}"
-          session_cookie: "{{ login_result.session_cookie }}"
-          project_id: "{{ project.project.id }}"
-          environment:
-            name: "Demo Environment"
-            password: "CODEWITHFEESER"
-        register: results
-  
-      - name: display results
-        ansible.builtin.debug:
-          var: results
-          verbsosity: 1
+    - name: Create an environment in a project
+      ebdruplab.semaphoreui.project_environment_create:
+        host: "{{ semaphore_host }}"
+        port: "{{ semaphore_port }}"
+        session_cookie: "{{ login_result.session_cookie }}"
+        project_id: "{{ project }}"
+        environment:
+          name: "Demo Environment"
+          password: "CODEWITHFEESER"
+      register: results
+ 
+    - name: Display the results of creating an environment within the project
+      ansible.builtin.debug:
+        var: results
+        verbosity: 1
 
 
     - name: Create static inventory
@@ -106,7 +124,7 @@
         host: "{{ semaphore_host }}"
         port: "{{ semaphore_port }}"
         session_cookie: "{{ login_result.session_cookie }}"
-        project_id: "{{ project.project.id }}"
+        project_id: "{{ project }}"
         inventory:
           name: "Local Static Inventory"
           type: "static"
@@ -117,7 +135,7 @@
         host: "{{ semaphore_host }}"
         port: "{{ semaphore_port }}"
         session_cookie: "{{ login_result.session_cookie }}"
-        project_id: "{{ project.project.id }}"
+        project_id: "{{ project }}"
         repository:
           ssh_key_id: 1
           name: "simpleansible-linkage"
@@ -135,7 +153,7 @@
         host: "{{ semaphore_host }}"
         port: "{{ semaphore_port }}"
         session_cookie: "{{ login_result.session_cookie }}"
-        project_id: "{{ project.project.id }}"        
+        project_id: "{{ project }}"        
         template:
           name: "Deploy Web"
           app: "ansible"
