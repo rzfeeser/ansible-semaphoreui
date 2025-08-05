@@ -2,7 +2,7 @@
 Ansible automations for SemaphoreUI
 
 # Steps to Use This Repository
-1. Install the collection found at https://galaxy.ansible.com/ui/repo/published/ebdruplab/semaphoreui/ and https://github.com/ebdruplab/ansible-collection_ebdruplab from Ansible Galaxy:
+1. Use the Ansible Galaxy tool to install the collection that is described both at https://galaxy.ansible.com/ui/repo/published/ebdruplab/semaphoreui/ and https://github.com/ebdruplab/ansible-collection_ebdruplab
   - `ansible-galaxy collection install ebdruplab.semaphoreui`
 
 2. Great! Now download my repository:
