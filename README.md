@@ -1,12 +1,12 @@
 # Overview
 Hey gang! Professor Feeser here. Today we're going to check out how to use Ansible automations for SemaphoreUI. 
 
-## Demos
+## Video Demos
 Videos demonstrating the code in this repository are available on the author's [YouTube Channel @CodeWithFeeser](https://www.youtube.com/@CodeWithFeeser):  
 
 - [YouTube CodeWithFeeser - Learn Ansible - Interacting with SemaphoreUI](https://youtu.be/NvIgR83mAXM)
 
-If you found the video helpful, be sure to hit **like** and **subscribe** for weekly lessons from CodeWithFeeser.
+If you found a video helpful, be sure to hit **like** and **subscribe** for weekly lessons from [YouTube Channel @CodeWithFeeser](https://www.youtube.com/@CodeWithFeeser)
 
 
 ## How to Use This Repository
